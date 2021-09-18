@@ -140,7 +140,7 @@ class BertPrefixModel(BertPreTrainedModel):
             param.requires_grad = False
         
         self.pre_seq_len = config.pre_seq_len
-        self.mid_dim = config.mid_dim
+        # self.mid_dim = config.mid_dim
         self.n_layer = config.num_hidden_layers
         self.n_head = config.num_attention_heads
         self.n_embd = config.hidden_size // config.num_attention_heads
@@ -256,7 +256,7 @@ class DeBertaPrefixModel(DebertaPreTrainedModel):
             param.requires_grad = False
         
         self.pre_seq_len = config.pre_seq_len
-        self.mid_dim = config.mid_dim
+        # self.mid_dim = config.mid_dim
         self.n_layer = config.num_hidden_layers
         self.n_head = config.num_attention_heads
         self.n_embd = config.hidden_size // config.num_attention_heads

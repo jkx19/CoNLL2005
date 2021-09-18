@@ -40,8 +40,8 @@ class Trainer_API:
         # parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))        
         # self.model_args, self.data_args, self.training_args = parser.parse_args_into_dataclasses()
 
-        self.task = args.task
-        assert self.task in ['pos', 'chunk', 'ner', 'conll05']
+        # self.task = args.task
+        # assert self.task in ['pos', 'chunk', 'ner', 'conll05']
         self.device = torch.device('cuda:0')
 
         device_num = torch.cuda.device_count() if torch.cuda.is_available() else 1
@@ -73,7 +73,7 @@ class Trainer_API:
                 self.model_name = 'gpt2-large'
 
         add_prefix_space = ADD_PREFIX_SPACE[args.model]
-        dataset = CoNLL(self.task, self.model_name, aps=add_prefix_space)
+        dataset = CoNLL(self.model_name, aps=add_prefix_space)
 
         self.train_dataset = dataset.train_data
         self.dev_dataset = dataset.dev_data
@@ -90,7 +90,6 @@ class Trainer_API:
         if args.method == 'prefix':
             self.lm_config.hidden_dropout_prob = args.dropout
             self.lm_config.pre_seq_len = args.pre_seq_len
-            self.lm_config.mid_dim = args.mid_dim
             if args.model == 'deberta':
                 self.model = DeBertaPrefixModel.from_pretrained(
                     self.model_name,
@@ -233,7 +232,7 @@ class Trainer_API:
                 f'Train_loss: {total_loss:.1f}, Eval_F1: {dev_result["f1"]:.3f}, Test_F1: {test_result["ALL"]:.3f},')
     
         pbar.close()
-        return best_test_result
+        return {'dev': best_dev_result, 'test':best_test_result}
     
     def eval(self):
         self.model.eval()
@@ -302,27 +301,14 @@ def construct_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--lr", type=float, default=5e-3)
     parser.add_argument('--batch_size', type=int, default=16)
-    parser.add_argument('--task', type=str, choices=['pos', 'chunk', 'ner', 'conll05'], default='conll05')
     parser.add_argument('--pre_seq_len', type=int, default=4)
-    parser.add_argument('--mid_dim', type=int, default=512)
     parser.add_argument('--model', type=str, choices=['bert', 'deberta', 'debertaV2'], default='bert')
     parser.add_argument('--model_size', type=str, choices=['base', 'large'], default='base')
     parser.add_argument('--method', type=str, choices=['prefix', 'finetune'], default='prefix')
-    parser.add_argument('--epoch', type=int, default=10)
+    parser.add_argument('--epoch', type=int, default=15)
     parser.add_argument('--dropout', type=float, default=0.1)
     parser.add_argument('--seed', type=int, default=11)
-    parser.add_argument('--cuda', type=str, default='7')
-    parser.add_argument("--path_to_training_file",
-                        default='data/CoNLL2005-SRL/conll05.train.txt',
-                        help="Provide path to training file")
-    parser.add_argument("--path_to_devel_file",
-                        default='data/CoNLL2005-SRL/conll05.devel.txt',
-                        help="Provide path to test file")
-    parser.add_argument("--path_to_test_file",
-                        default='data/CoNLL2005-SRL/conll05.test.brown.txt',
-                        help="Provide path to test file")
-    parser.add_argument('--model_type', type=int, default=0)
-    parser.add_argument('--max_len', type=int, default=256)
+    parser.add_argument('--cuda', type=str, default='6')
     args = parser.parse_args()
     set_seed(args)
     return args
@@ -330,7 +316,7 @@ def construct_args():
 
 def main():
     args = construct_args()
-    os.environ["CUDA_VISIBLE_DEVICES"] = '6'
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
     train_api = Trainer_API(args)
     result = train_api.train()
     sys.stdout = open('result.txt', 'a')

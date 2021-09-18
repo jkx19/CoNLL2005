@@ -23,9 +23,9 @@ MAP_DICT = {
 }
 
 class CoNLL(Dataset):
-    def __init__(self, task: str, model_name:str, aps: bool) -> None:
+    def __init__(self, model_name:str, aps: bool) -> None:
         super().__init__()
-        self.task = task + '_tags'
+        # self.task = task + '_tags'
         self.input, self.labels, self.label_mask, self.attention_mask = [], [], [], []
         self.ignore_columns = ['tags','id','tokens', 'index']
 
@@ -93,10 +93,6 @@ class CoNLL(Dataset):
             [self.label_list[l] for (p, l) in zip(prediction, label) if l != -100]
             for prediction, label in zip(predictions, labels)
         ]
-
-        # print(true_predictions[0])
-        # print(true_labels[0])
-        # exit()
 
         results = self.metric.compute(predictions=true_predictions, references=true_labels)
         return {
