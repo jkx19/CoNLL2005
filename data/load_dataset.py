@@ -48,7 +48,7 @@ tagging scheme, whereas the original dataset uses IOB1.
 For more details see https://www.clips.uantwerpen.be/conll2003/ner/ and https://www.aclweb.org/anthology/W03-0419
 """
 
-_URL = "/home/kaixuanj/p_tuning/SeqLabel/CoNLL05/data/"
+_URL = "/workspace/kaixuanj/ptuning/SeqLabel/CoNLL2005/data/"
 _TRAINING_FILE = "conll05.train.txt"
 _DEV_FILE = "conll05.devel.txt"
 _TEST_WSJ_FILE = "conll05.test.wsj.txt"

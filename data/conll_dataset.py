@@ -62,7 +62,7 @@ class CoNLL(Dataset):
             desc="Running tokenizer on WSJ test dataset",
         )
 
-        self.test_brown = data['test_wsj'].map(
+        self.test_brown = data['test_brown'].map(
             self.tokenize_and_align_labels,
             batched=True,
             load_from_cache_file=True,

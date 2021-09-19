@@ -9,6 +9,7 @@ from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.sampler import RandomSampler
 from torch.optim import AdamW
 from transformers.trainer_pt_utils import get_parameter_names
+from transformers import RobertaForTokenClassification, DebertaForTokenClassification
 
 from tqdm import tqdm
 from typing import Optional
@@ -20,11 +21,12 @@ from data.conll_dataset import CoNLL
 from model.prefix import BertForTokenClassification, BertPrefixModel
 from model.prefix import DeBertaPrefixModel
 from model.prefix import DeBertaV2PrefixModel
-from model.deberta import DebertaForTokenClassification
+from model.prefix import RobertaPrefixModel
 # from utils.test_model import test_semantic_role_model
 
 ADD_PREFIX_SPACE = {
     'bert': False,
+    'roberta': True,
     'deberta': True,
     'gpt2': True,
     'debertaV2': True,
@@ -56,6 +58,8 @@ class Trainer_API:
 
         if args.model == 'bert':
             self.model_name = f'bert-{args.model_size}-uncased'
+        elif args.model == 'roberta':
+            self.model_name = f'roberta-{args.model_size}'
         elif args.model == 'deberta':
             if args.model_size == 'base':
                 self.model_name = 'microsoft/deberta-xlarge'
@@ -108,18 +112,30 @@ class Trainer_API:
                     config=self.lm_config,
                     revision='main',
                 )
+            elif args.model == 'roberta':
+                self.model = RobertaPrefixModel.from_pretrained(
+                    self.model_name,
+                    config=self.lm_config,
+                    revision='main',
+                )
             elif args.model == 'gpt2':
                 raise NotImplementedError
         
         elif args.method == 'finetune':
-            if 'deberta' in self.model_name:
+            if self.model == 'deberta':
                 self.model = DebertaForTokenClassification.from_pretrained(
                     self.model_name,
                     config=self.lm_config,
                     revision='main',
                 )
-            elif 'bert' in self.model_name:
+            elif self.model == 'bert':
                 self.model = BertForTokenClassification.from_pretrained(
+                    self.model_name,
+                    config=self.lm_config,
+                    revision='main',
+                )
+            elif self.model == 'roberta':
+                self.model = RobertaForTokenClassification.from_pretrained(
                     self.model_name,
                     config=self.lm_config,
                     revision='main',
@@ -159,16 +175,12 @@ class Trainer_API:
         decay_parameters = [name for name in decay_parameters if "bias" not in name]
         optimizer_grouped_parameters = [
             {
-                "params": [p for n, p in self.model.classifier.named_parameters() if n in decay_parameters],
+                "params": [p for n, p in self.model.named_parameters() if n in decay_parameters],
                 "weight_decay": self.weight_decay,
             },
             {
-                "params": [p for n, p in self.model.classifier.named_parameters() if n not in decay_parameters],
+                "params": [p for n, p in self.model.named_parameters() if n not in decay_parameters],
                 "weight_decay": 0.0,
-            },
-            {
-                "params": [p for n, p in self.model.prefix_encoder.named_parameters() if n not in decay_parameters],
-                "weight_decay": self.weight_decay,
             },
         ]
         optimizer_kwargs = {
@@ -302,7 +314,7 @@ def construct_args():
     parser.add_argument("--lr", type=float, default=5e-3)
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--pre_seq_len', type=int, default=4)
-    parser.add_argument('--model', type=str, choices=['bert', 'deberta', 'debertaV2'], default='bert')
+    parser.add_argument('--model', type=str, choices=['bert', 'roberta', 'deberta', 'debertaV2'], default='deberta')
     parser.add_argument('--model_size', type=str, choices=['base', 'large'], default='base')
     parser.add_argument('--method', type=str, choices=['prefix', 'finetune'], default='prefix')
     parser.add_argument('--epoch', type=int, default=15)
